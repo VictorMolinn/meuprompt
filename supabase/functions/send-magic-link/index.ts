@@ -24,39 +24,32 @@ serve(async (req) => {
 
   try {
     const { email } = await req.json();
+    if (!email) throw new Error('Email is required');
 
-    if (!email) {
-      throw new Error('Email is required');
-    }
-
+    // Gera o Magic Link apontando para o domínio base
     const { data, error } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
       email,
       options: {
-        redirectTo: `${SITE_URL}/auth/callback`
+        redirectTo: SITE_URL
       }
     });
-
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     
-    // Store callback info
+    // Grava no banco para auditoria / pós-login
     const { error: callbackError } = await supabase
       .from('auth_callbacks')
       .insert({
         token: data.properties.token,
         redirect_url: `${SITE_URL}/prompts`
       });
-    
-    if (callbackError) {
-      throw callbackError;
-    }
+    if (callbackError) throw callbackError;
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
+
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: message }), {
