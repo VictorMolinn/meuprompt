@@ -13,6 +13,7 @@ import MagicLink from './pages/auth/MagicLink';
 import Welcome from './pages/onboarding/Welcome';
 import Callback from './pages/auth/Callback';
 import SetPassword from './pages/auth/SetPassword';
+import ForgotPassword from './pages/auth/ForgotPassword';
 import Onboarding from './pages/onboarding/Onboarding';
 import OnboardingComplete from './pages/onboarding/OnboardingComplete';
 import PromptList from './pages/prompts/PromptList';
