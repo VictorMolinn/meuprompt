@@ -81,6 +81,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/magic-link" element={<MagicLink />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="/termos-de-uso" element={<TermsOfUse />} />
             <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />

@@ -95,7 +95,7 @@ export default function Login() {
               </div>
               <div className="mt-1 text-right">
                 <Link 
-                  to="/auth/forgot-password"
+                  to="/forgot-password"
                   className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
                 >
                   Esqueceu sua senha?
