@@ -14,6 +14,7 @@ import Welcome from './pages/onboarding/Welcome';
 import Callback from './pages/auth/Callback';
 import SetPassword from './pages/auth/SetPassword';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import PasswordResetSuccess from './pages/auth/PasswordResetSuccess';
 import Onboarding from './pages/onboarding/Onboarding';
 import OnboardingComplete from './pages/onboarding/OnboardingComplete';
 import PromptList from './pages/prompts/PromptList';
