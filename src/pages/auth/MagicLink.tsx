@@ -20,7 +20,9 @@ export default function MagicLink() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // use só o domínio base, ou o path que seu Router atende (/callback):
+          emailRedirectTo: `${window.location.origin}`,
+          // ou: emailRedirectTo: `${window.location.origin}/callback`,
         },
       });
 
