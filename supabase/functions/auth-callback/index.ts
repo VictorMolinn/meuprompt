@@ -24,7 +24,7 @@ serve(async (req) => {
     const type = url.searchParams.get('type');
     const redirectTo = url.searchParams.get('redirect_to');
 
-    // Aceita tanto magiclink quanto recovery
+    // Aceita tanto magiclink quanto recovery y
     if (!token || (type !== 'magiclink' && type !== 'recovery')) {
       throw new Error('Invalid token or type');
     }
