@@ -1,0 +1,26 @@
+# Force HTTPS
+[[redirects]]
+  from = "http://chimerical-lamington-3802a5.netlify.app/*"
+  to = "https://meuprompt.eiaiflix.com.br/:splat"
+  status = 301
+  force = true
+
+# Redirect Netlify domain to custom domain
+[[redirects]]
+  from = "https://chimerical-lamington-3802a5.netlify.app/*"
+  to = "https://meuprompt.eiaiflix.com.br/:splat"
+  status = 301
+  force = true
+
+# Redirect bare Netlify domain
+[[redirects]]
+  from = "https://chimerical-lamington-3802a5.netlify.app"
+  to = "https://meuprompt.eiaiflix.com.br"
+  status = 301
+  force = true
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
