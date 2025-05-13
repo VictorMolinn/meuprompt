@@ -21,7 +21,7 @@ const PromptList: React.FC = () => {
     setSelectedType,
     getFilteredPrompts
   } = usePromptStore();
-  const { profile } = useAuthStore();
+  const { profile, isLoading: authLoading } = useAuthStore();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -33,6 +33,13 @@ const PromptList: React.FC = () => {
   const userNiche = niches.find(n => n.id === profile?.niche_id);
   const nicheColor = userNiche?.color || '#002244';
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+      </div>
+    );
+  }
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);

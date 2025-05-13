@@ -21,7 +21,7 @@ const Profile: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
-  const { user, profile, getProfile } = useAuthStore();
+  const { user, profile, getProfile, isLoading: authLoading } = useAuthStore();
   const { niches, fetchNiches } = usePromptStore();
   const navigate = useNavigate();
 
@@ -46,6 +46,13 @@ const Profile: React.FC = () => {
     }
   }, [user, profile, navigate, fetchNiches]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+      </div>
+    );
+  }
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
