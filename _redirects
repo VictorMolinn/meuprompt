@@ -1,0 +1,3 @@
+# Netlify domain → custom domain
+https://chimerical-lamington-3802a5.netlify.app/* https://meuprompt.eiaiflix.com.br/:splat 301!
+https://chimerical-lamington-3802a5.netlify.app           https://meuprompt.eiaiflix.com.br           301!
