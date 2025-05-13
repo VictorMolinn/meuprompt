@@ -14,18 +14,19 @@ export default function ForgotPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
+      // Aqui corrigimos o redirectTo para a página de set-password
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+        redirectTo: `${window.location.origin}/auth/set-password`,
       });
 
       if (error) throw error;
-      
+
       setIsSent(true);
-      toast.success('Password reset instructions sent to your email');
-    } catch (error) {
-      toast.error('Failed to send reset instructions. Please try again.');
+      toast.success('Instruções de redefinição de senha enviadas para seu e-mail.');
+    } catch {
+      toast.error('Falha ao enviar instruções. Por favor, tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -37,15 +38,15 @@ export default function ForgotPassword() {
         <div className="w-full max-w-md space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
           <KeyRound className="mx-auto h-12 w-12 text-green-600 dark:text-green-400" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Check your email
+            Verifique seu e-mail
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            We've sent password reset instructions to {email}
+            Enviamos um link para redefinir sua senha em {email}.
           </p>
           <div className="pt-4">
             <Link to="/login">
               <Button variant="outline" className="w-full">
-                Return to login
+                Voltar ao login
               </Button>
             </Link>
           </div>
@@ -60,17 +61,20 @@ export default function ForgotPassword() {
         <div className="text-center">
           <KeyRound className="mx-auto h-12 w-12 text-blue-600 dark:text-blue-400" />
           <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Reset your password
+            Redefinir sua senha
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Enter your email and we'll send you instructions to reset your password
+            Digite seu e-mail que enviaremos um link para redefinir sua senha.
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email address
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              E-mail
             </label>
             <Input
               id="email"
@@ -79,30 +83,26 @@ export default function ForgotPassword() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="mt-1"
-              placeholder="you@example.com"
+              placeholder="seuemail@exemplo.com"
             />
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               </div>
             ) : (
-              'Send reset instructions'
+              'Enviar instruções'
             )}
           </Button>
 
           <div className="text-center">
-            <Link 
+            <Link
               to="/login"
               className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
             >
-              Back to login
+              Voltar ao login
             </Link>
           </div>
         </form>
