@@ -1,4 +1,11 @@
-# 1) Redireciona todo tráfego do domínio Netlify para o customizado
+# 1) Força HTTPS no custom domain
+[[redirects]]
+  from   = "http://meuprompt.eiaiflix.com.br/*"
+  to     = "https://meuprompt.eiaiflix.com.br/:splat"
+  status = 301
+  force  = true
+
+# 2) Redireciona todo tráfego do domínio Netlify para o customizado
 [[redirects]]
   from       = "/*"
   to         = "https://meuprompt.eiaiflix.com.br/:splat"
@@ -6,21 +13,7 @@
   force      = true
   conditions = { Host = "chimerical-lamington-3802a5.netlify.app" }
 
-[[redirects]]
-  from       = "/"
-  to         = "https://meuprompt.eiaiflix.com.br"
-  status     = 301
-  force      = true
-  conditions = { Host = "chimerical-lamington-3802a5.netlify.app" }
-
-# 2) Força HTTPS no custom domain (opcional)
-[[redirects]]
-  from       = "http://meuprompt.eiaiflix.com.br/*"
-  to         = "https://meuprompt.eiaiflix.com.br/:splat"
-  status     = 301
-  force      = true
-
-# 3) Fallback SPA
+# 3) Fallback SPA (serve index.html para todas as rotas internas)
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
