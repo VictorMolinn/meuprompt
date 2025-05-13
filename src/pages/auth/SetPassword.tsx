@@ -1,54 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { toast } from 'sonner';
 
 export default function SetPassword() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
+  // 1) Verifica o token de recovery via query string
   useEffect(() => {
-    async function handleRecoveryCallback() {
-      // Só continua se o hash tiver access_token e type=recovery
-      if (!window.location.hash.includes('type=recovery')) {
-        navigate('/login', { replace: true });
-        return;
-      }
-
-      // Extrai a sessão de recovery e persiste
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-
-      if (error || !session) {
-        console.error('Erro no recovery callback:', error);
-        toast.error('Link de recuperação inválido ou expirado.');
-        navigate('/login', { replace: true });
-        return;
-      }
-
-      // Limpamos o hash da URL para não expor tokens
-      window.history.replaceState({}, document.title, '/auth/set-password');
-      setIsVerifying(false);
+    const token = searchParams.get('token');
+    const type  = searchParams.get('type');
+    if (!token || type !== 'recovery') {
+      navigate('/login', { replace: true });
+      return;
     }
 
-    handleRecoveryCallback();
-  }, [navigate]);
+    supabase.auth
+      .verifyOtp({ token, type: 'recovery' })
+      .then(({ error }) => {
+        if (error) {
+          toast.error('Link de recuperação inválido ou expirado.');
+          navigate('/login', { replace: true });
+        } else {
+          setIsVerifying(false);
+        }
+      });
+  }, [navigate, searchParams]);
 
+  // 2) Atualiza a senha
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      // Atualiza a senha do usuário já autenticado em recovery
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-
       toast.success('Senha redefinida com sucesso!');
       navigate('/login', { replace: true });
     } catch {
@@ -58,7 +49,7 @@ export default function SetPassword() {
     }
   };
 
-  // Enquanto verifica, mostramos spinner
+  // 3) Spinner enquanto verifica
   if (isVerifying) {
     return (
       <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
@@ -67,7 +58,7 @@ export default function SetPassword() {
     );
   }
 
-  // Form de redefinição
+  // 4) Formulário
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4">
       <form
