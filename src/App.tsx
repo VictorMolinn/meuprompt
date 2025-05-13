@@ -84,6 +84,7 @@ function App() {
             <Route path="/magic-link" element={<MagicLink />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/callback" element={<Callback />} />
+            <Route path="/auth/password-reset-success" element={<PasswordResetSuccess />} />
             <Route path="/termos-de-uso" element={<TermsOfUse />} />
             <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
             <Route path="/auth/set-password" element={<SetPassword />} />

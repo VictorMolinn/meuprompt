@@ -71,7 +71,7 @@ export default function SetPassword() {
       }
 
       toast.success('Senha redefinida com sucesso! Redirecionando ao login...');
-      navigate('/login', { replace: true });
+      navigate('/auth/password-reset-success', { replace: true });
     } catch (err: any) {
       console.error('Erro inesperado ao submeter nova senha:', err.message);
       toast.error('Erro ao redefinir senha. Verifique sua conexão e tente novamente.');
