@@ -15,10 +15,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: corsHeaders,
-      status: 204,
-    });
+    return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
   try {
@@ -27,11 +24,12 @@ serve(async (req) => {
     const type = url.searchParams.get('type');
     const redirectTo = url.searchParams.get('redirect_to');
 
-    if (!token || type !== 'magiclink') {
+    // Aceita tanto magiclink quanto recovery
+    if (!token || (type !== 'magiclink' && type !== 'recovery')) {
       throw new Error('Invalid token or type');
     }
 
-    // Check if token is valid
+    // Verifica se o token existe na tabela
     const { data: callback } = await supabase
       .from('auth_callbacks')
       .select('*')
@@ -42,20 +40,27 @@ serve(async (req) => {
       throw new Error('Invalid or expired token');
     }
 
-    // Mark token as used
+    // Marca o token como usado
     await supabase
       .from('auth_callbacks')
       .update({ used: true })
       .eq('id', callback.id);
 
-    // Redirect to the callback URL
+    // Define o destino conforme o tipo
+    let destination: string;
+    if (type === 'magiclink') {
+      destination = redirectTo || `${SITE_URL}/callback`;
+    } else {
+      // recovery
+      destination = redirectTo || `${SITE_URL}/auth/set-password`;
+    }
+
+    // Redireciona o usuário
     return new Response(null, {
-      headers: {
-        ...corsHeaders,
-        'Location': redirectTo || `${SITE_URL}/auth/callback?token=${token}`,
-      },
+      headers: { ...corsHeaders, Location: destination },
       status: 302,
     });
+
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: message }), {
