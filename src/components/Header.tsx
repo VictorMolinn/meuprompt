@@ -10,13 +10,13 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { isAuthenticated, isAdmin, profile, signOut } = useAuthStore();
-  const { niches, fetchNiches } = usePromptStore();
+  const promptStore = usePromptStore();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchNiches();
-  }, [fetchNiches]);
+    promptStore.fetchNiches();
+  }, [promptStore]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -59,11 +59,11 @@ const Header: React.FC = () => {
           onClick={closeMenu}
         >
           <span className="text-blue-900 dark:text-white">EIAIFLIX</span>
-          {profile?.niche_id && niches.length > 0 && (
+          {profile?.niche_id && promptStore.niches.length > 0 && (
             <>
               <span className="mx-2 text-gray-400">/</span>
-              <span className="font-medium" style={{ color: niches.find(n => n.id === profile.niche_id)?.color || '#4A5568' }}>
-                {niches.find(n => n.id === profile.niche_id)?.display_name}
+              <span className="font-medium" style={{ color: promptStore.niches.find(n => n.id === profile.niche_id)?.color || '#4A5568' }}>
+                {promptStore.niches.find(n => n.id === profile.niche_id)?.display_name}
               </span>
             </>
           )}
