@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { withAuthRetry } from '../lib/supaWrap';
 import type { Prompt, Niche, Area, PromptType } from '../types';
 
 interface PromptState {
@@ -159,70 +160,78 @@ export const usePromptStore = create<PromptState>((set, get) => ({
   },
 
   toggleFavorite: async (promptId, userId) => {
-    // Check if already a favorite using maybeSingle() instead of single()
-    const { data: existingFav, error: checkError } = await supabase
-      .from('favorites')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('prompt_id', promptId)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error('Error checking favorite:', checkError);
-      return;
-    }
-
     try {
-      if (existingFav) {
-        // Remove favorite
-        const { error } = await supabase
+      // Check if already a favorite using maybeSingle() instead of single()
+      const { data: existingFav, error: checkError } = await withAuthRetry(() =>
+        supabase
           .from('favorites')
-          .delete()
+          .select('*')
           .eq('user_id', userId)
-          .eq('prompt_id', promptId);
+          .eq('prompt_id', promptId)
+          .maybeSingle()
+      );
 
-        if (error) throw error;
-        
-        // Update local state
-        set(state => ({
-          favorites: state.favorites.filter(fav => fav.id !== promptId),
-          prompts: state.prompts.map(p => 
-            p.id === promptId ? { ...p, favorite: false } : p
-          )
-        }));
-      } else {
-        // Add favorite
-        const { error } = await supabase
-          .from('favorites')
-          .insert([{ user_id: userId, prompt_id: promptId }]);
+      if (checkError) {
+        console.error('Error checking favorite:', checkError);
+        return;
+      }
 
-        if (error) throw error;
-        
-        // Update local state
-        const promptToAdd = get().prompts.find(p => p.id === promptId);
-        if (promptToAdd) {
+      try {
+        if (existingFav) {
+          // Remove favorite
+          const { error } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('user_id', userId)
+            .eq('prompt_id', promptId);
+
+          if (error) throw error;
+          
+          // Update local state
           set(state => ({
-            favorites: [...state.favorites, { ...promptToAdd, favorite: true }],
+            favorites: state.favorites.filter(fav => fav.id !== promptId),
             prompts: state.prompts.map(p => 
-              p.id === promptId ? { ...p, favorite: true } : p
+              p.id === promptId ? { ...p, favorite: false } : p
             )
           }));
+        } else {
+          // Add favorite
+          const { error } = await supabase
+            .from('favorites')
+            .insert([{ user_id: userId, prompt_id: promptId }]);
+
+          if (error) throw error;
+          
+          // Update local state
+          const promptToAdd = get().prompts.find(p => p.id === promptId);
+          if (promptToAdd) {
+            set(state => ({
+              favorites: [...state.favorites, { ...promptToAdd, favorite: true }],
+              prompts: state.prompts.map(p => 
+                p.id === promptId ? { ...p, favorite: true } : p
+              )
+            }));
+          }
         }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('Error in toggleFavorite:', error);
     }
   },
 
   ratePrompt: async (promptId, userId, rating) => {
     try {
       // Check if user already rated this prompt using maybeSingle()
-      const { data: existingRating, error: checkError } = await supabase
-        .from('ratings')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('prompt_id', promptId)
-        .maybeSingle();
+      const { data: existingRating, error: checkError } = await withAuthRetry(() =>
+        supabase
+          .from('ratings')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('prompt_id', promptId)
+          .maybeSingle()
+      );
 
       if (checkError) {
         console.error('Error checking rating:', checkError);
