@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { usePromptStore } from '../../store/promptStore';
-import { withAuthRetry } from '../../lib/supaWrap';
-import { toast } from 'sonner';
-import { Button } from '../../components/ui/Button';
 import PromptCard from '../../components/PromptCard';
-import PromptSkeleton from '../../components/ui/PromptSkeleton';
 import { Search, Filter, X, Crown, LayoutGrid, List } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Prompt } from '../../types';
@@ -32,8 +28,6 @@ const PromptList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [premiumFilter, setPremiumFilter] = useState<'all' | 'free' | 'premium'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [timedOut, setTimedOut] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   
   const isPremium = profile?.subscription_status === 'premium';
   const userNiche = niches.find(n => n.id === profile?.niche_id);
@@ -49,36 +43,16 @@ const PromptList: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      setTimedOut(false);
-      
-      // Set timeout after 8s
-      const timeoutId = setTimeout(() => {
-        if (isLoading) setTimedOut(true);
-      }, 8000);
-      
-      try {
-        await withAuthRetry(() => Promise.all([
-          fetchPrompts(),
-          fetchAreas(),
-          fetchPromptTypes()
-        ]));
-      } catch (error) {
-        if (error instanceof TypeError) {
-          toast.error('Sem conexão. Verifique a rede e tente novamente.');
-        }
-        console.error('Error loading prompts:', error);
-      }
-      
-      clearTimeout(timeoutId);
+      await Promise.all([
+        fetchPrompts(),
+        fetchAreas(),
+        fetchPromptTypes()
+      ]);
       setIsLoading(false);
     };
     
     loadData();
-  }, [fetchPrompts, fetchAreas, fetchPromptTypes, retryCount]);
-
-  const handleRetry = () => {
-    setRetryCount(count => count + 1);
-  };
+  }, [fetchPrompts, fetchAreas, fetchPromptTypes]);
 
   const filteredPrompts = getFilteredPrompts().filter((prompt: Prompt) => {
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -253,40 +227,9 @@ const PromptList: React.FC = () => {
 
       {/* Results */}
       {isLoading ? (
-        <div>
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <PromptSkeleton key={i} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4 animate-pulse">
-                  <div className="flex gap-4">
-                    <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-                    <div className="flex-1 space-y-3">
-                      <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded" />
-                      <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded" />
-                      <div className="h-4 w-5/6 bg-gray-200 dark:bg-gray-700 rounded" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {timedOut && (
-            <div className="text-center mt-8">
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                O carregamento está demorando mais que o normal.
-              </p>
-              <Button onClick={handleRetry}>
-                Tentar Novamente
-              </Button>
-            </div>
-          )}
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Carregando prompts...</p>
         </div>
       ) : filteredPrompts.length > 0 ? (
         viewMode === 'grid' ? (

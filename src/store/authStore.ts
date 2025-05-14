@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { withAuthRetry } from '../lib/supaWrap';
 import type { UserProfile } from '../types';
 
 interface AuthState {
@@ -25,26 +24,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   getProfile: async () => {
     const { user } = get();
     if (!user) return null;
-    
-    const { data, error } = await withAuthRetry(() => supabase
+
+    try {
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .maybeSingle()
-    );
-    
-    if (error) {
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      // If no profile found, return null without updating state
+      if (!data) {
+        return null;
+      }
+      
+      set({ profile: data });
+      return data;
+    } catch (error) {
       console.error('Error loading profile:', error);
       return null;
     }
-      
-    // If no profile found, return null without updating state
-    if (!data) {
-      return null;
-    }
-      
-    set({ profile: data });
-    return data;
   },
 
   signIn: async (email, password) => {
