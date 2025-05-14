@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore, initializeAuth } from './store/authStore';
+import { usePromptStore } from './store/promptStore';
 import { Toaster } from 'sonner';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -67,9 +68,23 @@ const OnboardingCheck = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  const { refreshData } = usePromptStore();
+
   useEffect(() => {
     initializeAuth();
-  }, []);
+
+    // Setup visibility change listener for data refresh
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshData]);
 
   return (
     <Router>
