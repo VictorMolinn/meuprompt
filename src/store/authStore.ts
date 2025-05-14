@@ -13,6 +13,8 @@ interface AuthState {
   signUp: (email: string, password: string) => Promise<{ error: any, data: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  setSession: (session: any) => void;
+  setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -21,20 +23,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAdmin: false,
   isLoading: true,
   isAuthenticated: false,
+  
+  setSession: (session) => {
+    const user = session?.user || null;
+    set({ 
+      user,
+      isAuthenticated: !!user,
+      isAdmin: user?.email === 'eiaiflix@gmail.com'
+    });
+  },
+
+  setLoading: (loading) => set({ isLoading: loading }),
 
   refreshSession: async () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
 
-      const user = session?.user || null;
-      set({ 
-        user, 
-        isAuthenticated: !!user,
-        isAdmin: user?.email === 'eiaiflix@gmail.com'
-      });
-
-      if (user) {
+      get().setSession(session);
+      
+      if (session?.user) {
         await get().getProfile();
       } else {
         set({ profile: null });
@@ -79,23 +87,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
       
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) throw sessionError;
-      if (!sessionData.session) throw new Error('Session not established');
-
-      set({ 
-        user: data.user, 
-        isAuthenticated: true, 
-        isAdmin: email === 'eiaiflix@gmail.com'
-      });
-
+      get().setSession(data.session);
       await get().getProfile();
+      
       return { error: null };
     } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Sign in error:', error);
-      }
+      console.error('Sign in error:', error);
       return { error };
     }
   },
@@ -131,25 +128,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .select()
           .single();
 
-        if (hasPurchase) {
-          await supabase
-            .from('hotmart_transactions')
-            .update({ user_id: data.user.id })
-            .eq('email', email)
-            .eq('status', 'APPROVED');
-        }
-
         if (profileError) {
           await supabase.auth.signOut();
           throw profileError;
         }
 
-        set({ 
-          user: data.user,
-          isAuthenticated: true,
-          isAdmin: email === 'eiaiflix@gmail.com'
-        });
-
+        get().setSession(data.session);
         await get().getProfile();
       }
 
@@ -177,15 +161,6 @@ export const initializeAuth = async () => {
     await authStore.refreshSession();
     useAuthStore.setState({ isLoading: false });
 
-    // Setup visibility change listener
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          authStore.refreshSession();
-        }
-      });
-    }
-    
     // Setup auth state change listener
     supabase.auth.onAuthStateChange(async (event, session) => {
       const user = session?.user || null;
@@ -204,9 +179,7 @@ export const initializeAuth = async () => {
     });
 
   } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error('Auth initialization error:', error);
-    }
+    console.error('Auth initialization error:', error);
     useAuthStore.setState({ isLoading: false });
   }
 };
