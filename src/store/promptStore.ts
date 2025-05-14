@@ -42,16 +42,24 @@ export const usePromptStore = create<PromptState>((set, get) => ({
   selectedType: null,
 
   refreshData: async () => {
+    console.log('Refreshing all data...');
     const { fetchPrompts, fetchFavorites } = get();
-    await Promise.all([
-      fetchPrompts(),
-      fetchFavorites()
-    ]);
+    try {
+      await Promise.all([
+        fetchPrompts(),
+        fetchFavorites()
+      ]);
+      console.log('Data refresh completed');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      throw error; // Re-throw to allow handling by the caller
+    }
   },
 
   fetchPrompts: async () => {
     set({ isLoading: true });
     try {
+      console.log('Fetching prompts...');
       const { profile } = useAuthStore.getState();
       const query = supabase
         .from('prompts')
@@ -69,15 +77,18 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       const { data, error } = await query;
 
       if (error) throw error;
+      console.log('Prompts fetched successfully:', data?.length);
       set({ prompts: data || [], isLoading: false });
     } catch (error) {
       console.error('Error fetching prompts:', error);
       set({ prompts: [], isLoading: false });
+      throw error;
     }
   },
 
   fetchPopularPrompts: async () => {
     try {
+      console.log('Fetching popular prompts...');
       const { data, error } = await supabase
         .from('prompts')
         .select(`
@@ -89,10 +100,12 @@ export const usePromptStore = create<PromptState>((set, get) => ({
         .limit(4);
 
       if (error) throw error;
+      console.log('Popular prompts fetched successfully:', data?.length);
       set({ popularPrompts: data || [] });
     } catch (error) {
       console.error('Error fetching popular prompts:', error);
       set({ popularPrompts: [] });
+      throw error;
     }
   },
 
@@ -103,10 +116,12 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       const { user, isAuthenticated } = useAuthStore.getState();
       
       if (!isAuthenticated || !user) {
+        console.log('User not authenticated, skipping favorites fetch');
         set({ favorites: [], isLoading: false });
         return;
       }
 
+      console.log('Fetching favorites for user:', user.id);
       const { data, error } = await supabase
         .from('favorites')
         .select(`
@@ -123,63 +138,75 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       if (error) throw error;
       
       const favorites = data
-        .filter(item => item.prompts) // Filter out any null prompts
+        .filter(item => item.prompts)
         .map(item => ({
           ...(item.prompts as Prompt),
           favorite: true
         }));
       
+      console.log('Favorites fetched successfully:', favorites.length);
       set({ favorites, isLoading: false });
     } catch (error) {
       console.error('Error fetching favorites:', error);
       set({ favorites: [], isLoading: false });
+      throw error;
     }
   },
 
   fetchNiches: async () => {
     try {
+      console.log('Fetching niches...');
       const { data, error } = await supabase
         .from('niches')
         .select('*');
 
       if (error) throw error;
+      console.log('Niches fetched successfully:', data?.length);
       set({ niches: data || [] });
     } catch (error) {
       console.error('Error fetching niches:', error);
       set({ niches: [] });
+      throw error;
     }
   },
 
   fetchAreas: async () => {
     try {
+      console.log('Fetching areas...');
       const { data, error } = await supabase
         .from('areas')
         .select('*');
 
       if (error) throw error;
+      console.log('Areas fetched successfully:', data?.length);
       set({ areas: data || [] });
     } catch (error) {
       console.error('Error fetching areas:', error);
       set({ areas: [] });
+      throw error;
     }
   },
 
   fetchPromptTypes: async () => {
     try {
+      console.log('Fetching prompt types...');
       const { data, error } = await supabase
         .from('prompt_types')
         .select('*');
 
       if (error) throw error;
+      console.log('Prompt types fetched successfully:', data?.length);
       set({ promptTypes: data || [] });
     } catch (error) {
       console.error('Error fetching prompt types:', error);
       set({ promptTypes: [] });
+      throw error;
     }
   },
 
   toggleFavorite: async (promptId, userId) => {
     try {
+      console.log('Toggling favorite for prompt:', promptId);
       const { data: existingFav, error: checkError } = await supabase
         .from('favorites')
         .select('*')
@@ -204,6 +231,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
             p.id === promptId ? { ...p, favorite: false } : p
           )
         }));
+        console.log('Favorite removed successfully');
       } else {
         const { error } = await supabase
           .from('favorites')
@@ -220,16 +248,19 @@ export const usePromptStore = create<PromptState>((set, get) => ({
             )
           }));
         }
+        console.log('Favorite added successfully');
       }
 
       await get().fetchFavorites();
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      throw error;
     }
   },
 
   ratePrompt: async (promptId, userId, rating) => {
     try {
+      console.log('Rating prompt:', promptId, rating);
       const { data: existingRating, error: checkError } = await supabase
         .from('ratings')
         .select('*')
@@ -246,12 +277,14 @@ export const usePromptStore = create<PromptState>((set, get) => ({
           .eq('id', existingRating.id);
 
         if (error) throw error;
+        console.log('Rating updated successfully');
       } else {
         const { error } = await supabase
           .from('ratings')
           .insert([{ user_id: userId, prompt_id: promptId, rating }]);
 
         if (error) throw error;
+        console.log('Rating added successfully');
       }
 
       set(state => ({
@@ -264,6 +297,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Error rating prompt:', error);
+      throw error;
     }
   },
 
