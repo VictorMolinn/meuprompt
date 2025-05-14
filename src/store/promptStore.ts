@@ -45,7 +45,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
     set({ isLoading: true });
     try {
       const { profile } = useAuthStore.getState();
-      const { data, error } = await withAuthRetry(() => supabase
+      const query = supabase
         .from('prompts')
         .select(`
           *,
@@ -59,7 +59,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
         query.eq('niche_id', profile.niche_id);
       }
       
-      return query);
+      const { data, error } = await withAuthRetry(() => query);
 
       if (error) throw error;
       set({ prompts: data || [], isLoading: false });
