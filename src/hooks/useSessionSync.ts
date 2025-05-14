@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 export function useSessionSync() {
   const signOut = useAuthStore((s) => s.signOut);
   const getProfile = useAuthStore((s) => s.getProfile);
-  const getProfile = useAuthStore((s) => s.getProfile);
 
   useEffect(() => {
     let refreshing = false;
@@ -33,16 +32,17 @@ export function useSessionSync() {
         if (data?.user) {
           await getProfile();
         }
+
         // força validação no backend
-        const { data, error } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
+        if (sessionError) {
           signOut();
           return;
         }
 
         // Recarrega o perfil se a sessão foi renovada com sucesso
-        if (data?.session) {
+        if (sessionData?.session) {
           await getProfile();
           
           // Reconecta o Realtime se necessário
