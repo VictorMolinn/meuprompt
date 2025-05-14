@@ -6,7 +6,7 @@ import PromptCard from '../../components/PromptCard';
 import PromptSkeleton from '../../components/ui/PromptSkeleton';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Button from '../../components/ui/Button';
+import { Button } from '../../components/ui/Button';
 
 const Favorites: React.FC = () => {
   const { favorites, fetchFavorites } = usePromptStore();

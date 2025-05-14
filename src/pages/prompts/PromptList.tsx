@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { usePromptStore } from '../../store/promptStore';
 import { withAuthRetry } from '../../lib/supaWrap';
 import { toast } from 'sonner';
-import Button from '../../components/ui/Button';
+import { Button } from '../../components/ui/Button';
 import PromptCard from '../../components/PromptCard';
 import PromptSkeleton from '../../components/ui/PromptSkeleton';
 import { Search, Filter, X, Crown, LayoutGrid, List } from 'lucide-react';
