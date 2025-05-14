@@ -5,7 +5,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase credentials');
+  console.error('Missing Supabase credentials. Please connect to Supabase first.');
 }
 
 export const supabase = createClient<Database>(
@@ -14,23 +14,17 @@ export const supabase = createClient<Database>(
   {
     auth: {
       persistSession: true,
-      storageKey: 'sb-auth-token',
-      storage: window.localStorage,
       autoRefreshToken: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      storage: localStorage,
+      storageKey: 'supabase.auth.token',
+      flowType: 'pkce'
     }
   }
 );
 
-// Listen for auth state changes
-supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT') {
-    // Clear local storage on sign out
-    localStorage.removeItem('sb-auth-token');
-  } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-    // Ensure token is saved
-    if (session?.access_token) {
-      localStorage.setItem('sb-auth-token', session.access_token);
-    }
-  }
-});
+// Expose client for debugging in development
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  // @ts-ignore
+  window.supabase = supabase;
+}
