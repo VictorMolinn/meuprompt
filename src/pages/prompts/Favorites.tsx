@@ -8,21 +8,31 @@ import Button from '../../components/ui/Button';
 
 const Favorites: React.FC = () => {
   const { favorites, fetchFavorites } = usePromptStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadFavorites = async () => {
+      if (!isAuthenticated || !user) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
-      await fetchFavorites();
-      setIsLoading(false);
+      setError(null);
+      
+      try {
+        await fetchFavorites();
+      } catch (err) {
+        console.error('Error loading favorites:', err);
+        setError('Falha ao carregar favoritos. Por favor, tente novamente.');
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
-    if (isAuthenticated) {
-      loadFavorites();
-    } else {
-      setIsLoading(false);
-    }
+
+    loadFavorites();
 
     // Setup visibility change listener
     const handleVisibilityChange = () => {
@@ -35,7 +45,7 @@ const Favorites: React.FC = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [fetchFavorites, isAuthenticated]);
+  }, [fetchFavorites, isAuthenticated, user]);
 
   if (!isAuthenticated) {
     return (
@@ -53,6 +63,19 @@ const Favorites: React.FC = () => {
               Fazer Login
             </Button>
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12 bg-red-50 dark:bg-red-900/20 rounded-lg">
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Tentar Novamente
+          </Button>
         </div>
       </div>
     );
