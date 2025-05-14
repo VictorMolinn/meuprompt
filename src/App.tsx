@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore, initializeAuth } from './store/authStore';
+import { useSessionSync } from './hooks/useSessionSync';
 import { Toaster } from 'sonner';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -67,6 +68,8 @@ const OnboardingCheck = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  useSessionSync();
+
   useEffect(() => {
     initializeAuth();
   }, []);
