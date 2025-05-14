@@ -26,6 +26,7 @@ interface PromptState {
   setSelectedArea: (areaId: string | null) => void;
   setSelectedType: (typeId: string | null) => void;
   getFilteredPrompts: () => Prompt[];
+  refreshData: () => Promise<void>;
 }
 
 export const usePromptStore = create<PromptState>((set, get) => ({
@@ -40,6 +41,14 @@ export const usePromptStore = create<PromptState>((set, get) => ({
   selectedArea: null,
   selectedType: null,
 
+  refreshData: async () => {
+    const { fetchPrompts, fetchFavorites } = get();
+    await Promise.all([
+      fetchPrompts(),
+      fetchFavorites()
+    ]);
+  },
+
   fetchPrompts: async () => {
     set({ isLoading: true });
     try {
@@ -53,7 +62,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
           prompt_types:type_id(*)
         `);
       
-      // If user has a niche selected, filter prompts by it
       if (profile?.niche_id) {
         query.eq('niche_id', profile.niche_id);
       }
@@ -107,7 +115,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
 
       if (error) throw error;
       
-      // Transform to match Prompt interface with favorite flag
       const favorites = data.map(item => ({
         ...(item.prompts as Prompt),
         favorite: true
@@ -159,22 +166,17 @@ export const usePromptStore = create<PromptState>((set, get) => ({
   },
 
   toggleFavorite: async (promptId, userId) => {
-    // Check if already a favorite using maybeSingle() instead of single()
-    const { data: existingFav, error: checkError } = await supabase
-      .from('favorites')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('prompt_id', promptId)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error('Error checking favorite:', checkError);
-      return;
-    }
-
     try {
+      const { data: existingFav, error: checkError } = await supabase
+        .from('favorites')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('prompt_id', promptId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
       if (existingFav) {
-        // Remove favorite
         const { error } = await supabase
           .from('favorites')
           .delete()
@@ -183,7 +185,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
 
         if (error) throw error;
         
-        // Update local state
         set(state => ({
           favorites: state.favorites.filter(fav => fav.id !== promptId),
           prompts: state.prompts.map(p => 
@@ -191,14 +192,12 @@ export const usePromptStore = create<PromptState>((set, get) => ({
           )
         }));
       } else {
-        // Add favorite
         const { error } = await supabase
           .from('favorites')
           .insert([{ user_id: userId, prompt_id: promptId }]);
 
         if (error) throw error;
         
-        // Update local state
         const promptToAdd = get().prompts.find(p => p.id === promptId);
         if (promptToAdd) {
           set(state => ({
@@ -209,6 +208,9 @@ export const usePromptStore = create<PromptState>((set, get) => ({
           }));
         }
       }
+
+      // Refresh favorites to ensure sync
+      await get().fetchFavorites();
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
@@ -216,7 +218,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
 
   ratePrompt: async (promptId, userId, rating) => {
     try {
-      // Check if user already rated this prompt using maybeSingle()
       const { data: existingRating, error: checkError } = await supabase
         .from('ratings')
         .select('*')
@@ -224,13 +225,9 @@ export const usePromptStore = create<PromptState>((set, get) => ({
         .eq('prompt_id', promptId)
         .maybeSingle();
 
-      if (checkError) {
-        console.error('Error checking rating:', checkError);
-        return;
-      }
+      if (checkError) throw checkError;
 
       if (existingRating) {
-        // Update existing rating
         const { error } = await supabase
           .from('ratings')
           .update({ rating })
@@ -238,7 +235,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
 
         if (error) throw error;
       } else {
-        // Add new rating
         const { error } = await supabase
           .from('ratings')
           .insert([{ user_id: userId, prompt_id: promptId, rating }]);
@@ -246,7 +242,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
         if (error) throw error;
       }
 
-      // Update local state
       set(state => ({
         prompts: state.prompts.map(p => 
           p.id === promptId ? { ...p, rating } : p

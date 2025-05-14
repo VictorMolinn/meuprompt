@@ -12,6 +12,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any, data: any }>;
   signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -20,6 +21,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAdmin: false,
   isLoading: true,
   isAuthenticated: false,
+
+  refreshSession: async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+
+      const user = session?.user || null;
+      set({ 
+        user, 
+        isAuthenticated: !!user,
+        isAdmin: user?.email === 'eiaiflix@gmail.com'
+      });
+
+      if (user) {
+        await get().getProfile();
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+      set({ user: null, profile: null, isAuthenticated: false, isAdmin: false });
+    }
+  },
 
   getProfile: async () => {
     const { user } = get();
@@ -34,7 +56,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
       
-      // If no profile found, return null without updating state
       if (!data) {
         return null;
       }
@@ -56,7 +77,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
       
-      // Verify session was established
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) throw sessionError;
@@ -131,7 +151,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAdmin: email === 'eiaiflix@gmail.com'
         });
 
-        // Get the profile after creation
         await get().getProfile();
       }
 
@@ -157,41 +176,39 @@ export const initializeAuth = async () => {
   const authStore = useAuthStore.getState();
   
   try {
-    const { data } = await supabase.auth.getSession();
-    const user = data?.session?.user || null;
-    
-    useAuthStore.setState({ 
-      user, 
-      isAuthenticated: !!user,
-      isAdmin: user?.email === 'eiaiflix@gmail.com',
-      isLoading: false 
-    });
-    
-    if (user) {
-      await authStore.getProfile();
+    await authStore.refreshSession();
+    useAuthStore.setState({ isLoading: false });
+
+    // Setup visibility change listener
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          authStore.refreshSession();
+        }
+      });
     }
+    
+    // Setup auth state change listener
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      const user = session?.user || null;
+      
+      useAuthStore.setState({ 
+        user, 
+        isAuthenticated: !!user,
+        isAdmin: user?.email === 'eiaiflix@gmail.com' 
+      });
+      
+      if (user) {
+        await authStore.getProfile();
+      } else {
+        useAuthStore.setState({ profile: null });
+      }
+    });
+
   } catch (error) {
     if (import.meta.env.DEV) {
       console.error('Auth initialization error:', error);
     }
-    console.error('Error initializing auth:', error);
     useAuthStore.setState({ isLoading: false });
   }
-  
-  // Setup auth state change listener
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    const user = session?.user || null;
-    
-    useAuthStore.setState({ 
-      user, 
-      isAuthenticated: !!user,
-      isAdmin: user?.email === 'eiaiflix@gmail.com' 
-    });
-    
-    if (user) {
-      await authStore.getProfile();
-    } else {
-      useAuthStore.setState({ profile: null });
-    }
-  });
 };
