@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
 
 export async function withAuthRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
@@ -16,6 +17,7 @@ export async function withAuthRetry<T>(fn: () => Promise<T>): Promise<T> {
       
       // Se não conseguiu renovar, desloga o usuário
       useAuthStore.getState().signOut();
+      toast.error('Sua sessão expirou. Por favor, faça login novamente.');
     }
     
     // Re-throw outros tipos de erro
