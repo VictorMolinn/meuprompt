@@ -72,7 +72,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       set({ prompts: data || [], isLoading: false });
     } catch (error) {
       console.error('Error fetching prompts:', error);
-      set({ isLoading: false });
+      set({ prompts: [], isLoading: false });
     }
   },
 
@@ -92,14 +92,21 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       set({ popularPrompts: data || [] });
     } catch (error) {
       console.error('Error fetching popular prompts:', error);
+      set({ popularPrompts: [] });
     }
   },
 
   fetchFavorites: async () => {
-    const userId = useAuthStore.getState().user?.id;
-    if (!userId) return;
-
+    set({ isLoading: true });
+    
     try {
+      const { user, isAuthenticated } = useAuthStore.getState();
+      
+      if (!isAuthenticated || !user) {
+        set({ favorites: [], isLoading: false });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('favorites')
         .select(`
@@ -111,18 +118,21 @@ export const usePromptStore = create<PromptState>((set, get) => ({
             prompt_types:type_id(*)
           )
         `)
-        .eq('user_id', userId);
+        .eq('user_id', user.id);
 
       if (error) throw error;
       
-      const favorites = data.map(item => ({
-        ...(item.prompts as Prompt),
-        favorite: true
-      }));
+      const favorites = data
+        .filter(item => item.prompts) // Filter out any null prompts
+        .map(item => ({
+          ...(item.prompts as Prompt),
+          favorite: true
+        }));
       
-      set({ favorites });
+      set({ favorites, isLoading: false });
     } catch (error) {
       console.error('Error fetching favorites:', error);
+      set({ favorites: [], isLoading: false });
     }
   },
 
@@ -136,6 +146,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       set({ niches: data || [] });
     } catch (error) {
       console.error('Error fetching niches:', error);
+      set({ niches: [] });
     }
   },
 
@@ -149,6 +160,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       set({ areas: data || [] });
     } catch (error) {
       console.error('Error fetching areas:', error);
+      set({ areas: [] });
     }
   },
 
@@ -162,6 +174,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       set({ promptTypes: data || [] });
     } catch (error) {
       console.error('Error fetching prompt types:', error);
+      set({ promptTypes: [] });
     }
   },
 
@@ -209,7 +222,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
         }
       }
 
-      // Refresh favorites to ensure sync
       await get().fetchFavorites();
     } catch (error) {
       console.error('Error toggling favorite:', error);
