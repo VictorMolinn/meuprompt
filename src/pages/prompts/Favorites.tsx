@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { usePromptStore } from '../../store/promptStore';
 import { useAuthStore } from '../../store/authStore';
 import PromptCard from '../../components/PromptCard';
-import { Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import Button from '../../components/ui/Button';
+import { Heart } from 'lucide-react';
 
 const Favorites: React.FC = () => {
   const { favorites, fetchFavorites } = usePromptStore();
@@ -21,7 +21,7 @@ const Favorites: React.FC = () => {
 
       setIsLoading(true);
       setError(null);
-      
+
       try {
         await fetchFavorites();
       } catch (err) {
@@ -95,7 +95,9 @@ const Favorites: React.FC = () => {
       {isLoading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Carregando seus favoritos...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">
+            Carregando seus favoritos...
+          </p>
         </div>
       ) : favorites.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
