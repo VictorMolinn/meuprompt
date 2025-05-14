@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { withAuthRetry } from '../lib/withAuthRetry';
+import { useAuthStore } from '../store/authStore';
 import type { Prompt, Niche, Area, PromptType } from '../types';
 
 interface PromptState {
