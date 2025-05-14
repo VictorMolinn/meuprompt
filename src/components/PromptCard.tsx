@@ -18,6 +18,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, isPublic = false }) => 
   const { isAuthenticated, user, profile } = useAuthStore();
   const { toggleFavorite, ratePrompt } = usePromptStore();
   const [isFavorite, setIsFavorite] = useState(prompt.favorite || false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [rating, setRating] = useState(prompt.rating || 0);
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [showCustomFields, setShowCustomFields] = useState(false);
@@ -54,18 +55,26 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, isPublic = false }) => 
   }, [prompt.content]);
 
   const handleToggleFavorite = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       toast.error('Você precisa estar logado para favoritar prompts');
       return;
     }
     
-    setIsFavorite(!isFavorite);
-    await toggleFavorite(prompt.id, user.id);
-    toast.success(isFavorite ? 'Prompt removido dos favoritos' : 'Prompt adicionado aos favoritos');
+    try {
+      setIsTogglingFavorite(true);
+      await toggleFavorite(prompt.id, user.id);
+      setIsFavorite(!isFavorite);
+      toast.success(isFavorite ? 'Prompt removido dos favoritos' : 'Prompt adicionado aos favoritos');
+    } catch (error) {
+      toast.error('Erro ao atualizar favoritos');
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
   };
 
   const handleRate = async (newRating: number) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       toast.error('Você precisa estar logado para avaliar prompts');
       return;
     }
@@ -180,19 +189,24 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, isPublic = false }) => 
         {isAuthenticated && !isPublic && (
           <button
             onClick={handleToggleFavorite}
-            className={`absolute top-3 right-3 p-2 bg-white dark:bg-gray-900 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 transform hover:scale-110 ${
+            disabled={isTogglingFavorite}
+            className={`absolute top-3 right-3 p-2 bg-white dark:bg-gray-900 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 transform ${
               isFavorite ? 'scale-110' : 'scale-100'
-            }`}
+            } ${isTogglingFavorite ? 'opacity-50 cursor-not-allowed' : ''}`}
             aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           >
-            <Heart 
-              size={20} 
-              className={`transition-colors duration-300 ${
-                isFavorite 
-                  ? "fill-red-500 text-red-500 transform scale-100" 
-                  : "text-gray-600 dark:text-gray-400 group-hover:text-red-500"
-              }`}
-            />
+            {isTogglingFavorite ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-gray-600" />
+            ) : (
+              <Heart 
+                size={20} 
+                className={`transition-colors duration-300 ${
+                  isFavorite 
+                    ? "fill-red-500 text-red-500 transform scale-100" 
+                    : "text-gray-600 dark:text-gray-400 group-hover:text-red-500"
+                }`}
+              />
+            )}
           </button>
         )}
       </div>
