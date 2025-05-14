@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { usePromptStore } from '../store/promptStore';
 import Button from './ui/Button';
-import { Menu, X, Sun, Moon, User, LogOut } from 'lucide-react';
+import { Menu, X, Sun, Moon, User, LogOut, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Header: React.FC = () => {
@@ -18,7 +18,6 @@ const Header: React.FC = () => {
     fetchNiches();
   }, [fetchNiches]);
 
-  // Toggle dark mode
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -86,12 +85,13 @@ const Header: React.FC = () => {
               </Link>
               <Link 
                 to="/favorites" 
-                className={`font-barlow font-medium transition-colors hover:text-blue-900 dark:hover:text-blue-400 ${
+                className={`font-barlow font-medium transition-colors hover:text-blue-900 dark:hover:text-blue-400 flex items-center ${
                   location.pathname === '/favorites' 
                     ? 'text-blue-900 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300'
                 }`}
               >
+                <Heart size={16} className="mr-2" />
                 Favoritos
               </Link>
               {isAdmin && (
@@ -220,9 +220,10 @@ const Header: React.FC = () => {
                   </Link>
                   <Link 
                     to="/favorites" 
-                    className="font-barlow font-medium py-2 transition-colors hover:text-blue-900 dark:hover:text-blue-400"
+                    className="font-barlow font-medium py-2 transition-colors hover:text-blue-900 dark:hover:text-blue-400 flex items-center"
                     onClick={closeMenu}
                   >
+                    <Heart size={16} className="mr-2" />
                     Favoritos
                   </Link>
                   <Link 
