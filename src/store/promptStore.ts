@@ -97,6 +97,21 @@ export const usePromptStore = create<PromptState>((set, get) => ({
     }
   },
 
+  fetchNiches: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('niches')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      set({ niches: data || [] });
+    } catch (error) {
+      console.error('Error fetching niches:', error);
+      set({ niches: [] });
+    }
+  },
+
   fetchFavorites: async () => {
     set({ isLoading: true });
     
