@@ -36,6 +36,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (user) {
         await get().getProfile();
+      } else {
+        set({ profile: null });
       }
     } catch (error) {
       console.error('Error refreshing session:', error);
@@ -109,7 +111,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error;
 
       if (data?.user) {
-        // Check for existing approved transactions by email
         const { data: transactionCheck } = await supabase
           .rpc('check_user_transaction', {
             user_email: email
@@ -117,7 +118,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         const hasPurchase = transactionCheck?.[0]?.has_transaction || false;
         
-        // Create profile with appropriate subscription status
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
@@ -131,7 +131,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .select()
           .single();
 
-        // If user has a purchase, link it to their account
         if (hasPurchase) {
           await supabase
             .from('hotmart_transactions')
@@ -171,7 +170,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 }));
 
-// Initialize auth state from session
 export const initializeAuth = async () => {
   const authStore = useAuthStore.getState();
   

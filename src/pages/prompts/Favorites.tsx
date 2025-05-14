@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { usePromptStore } from '../../store/promptStore';
+import { useAuthStore } from '../../store/authStore';
 import PromptCard from '../../components/PromptCard';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -7,6 +8,7 @@ import Button from '../../components/ui/Button';
 
 const Favorites: React.FC = () => {
   const { favorites, fetchFavorites } = usePromptStore();
+  const { isAuthenticated } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -16,8 +18,45 @@ const Favorites: React.FC = () => {
       setIsLoading(false);
     };
     
-    loadFavorites();
-  }, [fetchFavorites]);
+    if (isAuthenticated) {
+      loadFavorites();
+    } else {
+      setIsLoading(false);
+    }
+
+    // Setup visibility change listener
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated) {
+        loadFavorites();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchFavorites, isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <Heart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-xl font-bold font-barlow text-gray-800 dark:text-white mb-2">
+            Faça login para ver seus favoritos
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            Você precisa estar logado para acessar seus prompts favoritos.
+          </p>
+          <Link to="/login">
+            <Button>
+              Fazer Login
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
