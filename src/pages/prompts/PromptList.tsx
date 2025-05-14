@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { usePromptStore } from '../../store/promptStore';
+import { withAuthRetry } from '../../lib/supaWrap';
 import PromptCard from '../../components/PromptCard';
 import { Search, Filter, X, Crown, LayoutGrid, List } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -43,11 +44,15 @@ const PromptList: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      await Promise.all([
-        fetchPrompts(),
-        fetchAreas(),
-        fetchPromptTypes()
-      ]);
+      try {
+        await withAuthRetry(() => Promise.all([
+          fetchPrompts(),
+          fetchAreas(),
+          fetchPromptTypes()
+        ]));
+      } catch (error) {
+        console.error('Error loading prompts:', error);
+      }
       setIsLoading(false);
     };
     

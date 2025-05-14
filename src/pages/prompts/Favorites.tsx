@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { usePromptStore } from '../../store/promptStore';
+import { withAuthRetry } from '../../lib/supaWrap';
 import PromptCard from '../../components/PromptCard';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -12,7 +13,11 @@ const Favorites: React.FC = () => {
   useEffect(() => {
     const loadFavorites = async () => {
       setIsLoading(true);
-      await fetchFavorites();
+      try {
+        await withAuthRetry(() => fetchFavorites());
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      }
       setIsLoading(false);
     };
     
